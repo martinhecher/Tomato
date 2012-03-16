@@ -1,0 +1,10 @@
+#------------------------------------------------------------------------------
+# Library configuration file for the Tomato project
+#------------------------------------------------------------------------------
+
+# Point the following variables your local library installations of OpenSG and Boost:
+SET(OPENSG_ROOT       "D:/Coding/Libs/OpenSG2-Februar2012/OpenSG.install")
+SET(BOOST_ROOT        "D:/Coding/Libs/OpenSG2-Februar2012/OpenSG.Support.install")
+
+SET(GLUT_ROOT         "D:/Coding/Libs/OpenSG2-Februar2012/OpenSG.Support.install")
+
