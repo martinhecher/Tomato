@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>Figure.cpp</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>Figure.cpp</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <hr>
+<ul>
+<li>\author Martin Hecher                                              *</li>
+<li>mailto:martin.hecher@fraunhofer.at                         *</li>
+<li>\date   2011-12-28                                                 *</li>
+</ul>
+<hr>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="preprocessor">#include "Figure.hpp"</span>
+<span class="preprocessor">#include "Controller.hpp"</span>
+
+<span class="preprocessor">#include &lt;OpenSG/OSGTransform.h&gt;</span>
+<span class="preprocessor">#include &lt;OpenSG/OSGVoidPAttachment.h&gt;</span>
+
+<span class="preprocessor">#include &lt;boost/bind.hpp&gt;</span>
+
+<span class="keyword">namespace</span> BoardGame
+{
+   Figure::Figure()
+   {
+      OSG::GroupUnrecPtr groupC = OSG::Group::create();
+      m_modelN = OSG::makeNodeFor(groupC);
+
+      m_transC = OSG::Transform::create();
+      m_rootN  = OSG::makeNodeFor(m_transC);
+
+      m_rootN-&gt;addChild(m_modelN);
+
+      m_speed        =  <span class="number">2</span>;
+      m_moveToLength = <span class="number">10</span>;
+      m_fps          = <span class="number">25</span>;
+
+      m_directions[<span class="number">0</span>] = OSG::Vec3f(-<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>) * m_speed;
+      m_directions[<span class="number">1</span>] = OSG::Vec3f( <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>) * m_speed;
+      m_directions[<span class="number">2</span>] = OSG::Vec3f( <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>) * m_speed;
+      m_directions[<span class="number">3</span>] = OSG::Vec3f( <span class="number">0</span>, <span class="number">0</span>,-<span class="number">1</span>) * m_speed;
+
+      createAnimations();
+   }
+
+   Figure::~Figure()
+   {
+      m_transC = <span class="number">0</span>;
+      m_modelN = <span class="number">0</span>;
+      m_rootN  = <span class="number">0</span>;
+   }
+
+   <span class="keyword">void</span> Figure::moveLeft()
+   {
+      Tomato::Animation* moveRight =
+            Tomato::Controller::the()-&gt;getAnimation(<span class="string">"Figure.moveLeft"</span>);
+      moveRight-&gt;setActive(<span class="keyword">true</span>);
+   }
+
+   <span class="keyword">void</span> Figure::moveRight()
+   {
+      Tomato::Animation* moveRight =
+            Tomato::Controller::the()-&gt;getAnimation(<span class="string">"Figure.moveRight"</span>);
+      moveRight-&gt;setActive(<span class="keyword">true</span>);
+   }
+
+   <span class="keyword">void</span> Figure::moveUp()
+   {
+      Tomato::Animation* moveRight =
+            Tomato::Controller::the()-&gt;getAnimation(<span class="string">"Figure.moveUp"</span>);
+      moveRight-&gt;setActive(<span class="keyword">true</span>);
+   }
+
+   <span class="keyword">void</span> Figure::moveDown()
+   {
+      Tomato::Animation* moveRight =
+            Tomato::Controller::the()-&gt;getAnimation(<span class="string">"Figure.moveDown"</span>);
+      moveRight-&gt;setActive(<span class="keyword">true</span>);
+   }
+
+   <span class="keyword">void</span> Figure::setModel(OSG::Node* modelN)
+   {
+      m_modelN-&gt;addChild(modelN);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>Allow to get the figure corresponding to the model node via a
+VoidP attachment:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::setVoidP(modelN, <span class="keyword">this</span>);
+   }
+
+   OSG::NodeTransitPtr Figure::getRoot()
+   {
+      <span class="keyword">return</span> OSG::NodeTransitPtr(m_rootN);
+   }
+   <span class="comment">/* ---------------------------------------------------------------------------*/</span>
+   <span class="comment">/* Create animations in scene:                                                */</span>
+   <span class="keyword">void</span> Figure::createAnimations()
+   {
+      createMoveToAnimation(m_directions[<span class="number">0</span>] , <span class="string">"Figure.moveRight"</span>);
+      createMoveToAnimation(m_directions[<span class="number">1</span>] , <span class="string">"Figure.moveLeft"</span>);
+      createMoveToAnimation(m_directions[<span class="number">2</span>] , <span class="string">"Figure.moveUp"</span>);
+      createMoveToAnimation(m_directions[<span class="number">3</span>] , <span class="string">"Figure.moveDown"</span>);
+   }
+
+   <span class="comment">/* ---------------------------------------------------------------------------*/</span>
+   <span class="comment">/* Creates an (inactive) animation that moves the figure into direction 'dir' */</span>
+   <span class="comment">/* with the given animation parameters:                                       */</span>
+   <span class="keyword">void</span> Figure::createMoveToAnimation(OSG::Vec3f&amp; dir,
+                                      <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; name)
+   {
+      Tomato::Action* moveToAction =
+            Tomato::Controller::the()-&gt;createAction(name);
+      moveToAction-&gt;setNumFrames(m_moveToLength);
+      moveToAction-&gt;setUserdata(&amp;dir);
+      moveToAction-&gt;onUpdate =
+            boost::bind&lt;<span class="keyword">void</span>&gt;(&amp;Figure::moveTo, <span class="keyword">this</span>, _1, _2, _3, _4);
+
+      Tomato::Animation* moveToAnimation =
+            Tomato::Controller::the()-&gt;createAnimation(name);
+      moveToAnimation-&gt;setFrameRate(m_fps);
+      moveToAnimation-&gt;add(moveToAction);
+      moveToAnimation-&gt;setActive(<span class="keyword">false</span>);
+   }
+
+   <span class="comment">/*! Linearly moves the figure into the diretion LinearMovement.dir with
+       the speed LinearMovement.speed.
+    */</span>
+   <span class="keyword">void</span> Figure::moveTo(<span class="keyword">int</span> curFrame, <span class="keyword">int</span> numFrames, <span class="keyword">int</span> fps, <span class="keyword">void</span>* userData)
+   {
+      OSG::Vec3f* dir = <span class="keyword">static_cast</span>&lt;OSG::Vec3f*&gt;(userData);
+
+      <span class="keyword">float</span> t = curFrame / fps;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>std::cout &lt;&lt; &quot;curFrame: &quot; &lt;&lt; curFrame &lt;&lt; std::endl;
+std::cout &lt;&lt; &quot;numFrames: &quot; &lt;&lt; numFrames &lt;&lt; std::endl;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Vec3f newAbsolutePosition = computeTranslation(t, *dir);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>std::cout &lt;&lt; &quot;newAbsolutePosition:  &quot; &lt;&lt; newAbsolutePosition &lt;&lt; std::endl;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Vec3f lastAbsolutePosition(<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>);
+      <span class="keyword">if</span>(curFrame - <span class="number">1</span> &gt; <span class="number">0</span>)
+      {
+         t = (curFrame - <span class="number">1</span>) / (<span class="keyword">float</span>)fps;
+         lastAbsolutePosition = computeTranslation(t, *dir);
+      }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>std::cout &lt;&lt; &quot;lastAbsolutePosition: &quot; &lt;&lt; lastAbsolutePosition &lt;&lt; std::endl;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Vec3f curPosition = getCurrentTranslation(m_transC-&gt;getMatrix());</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>std::cout &lt;&lt; &quot;curPosition: &quot; &lt;&lt; curPosition &lt;&lt; std::endl;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Vec3f diffPosition = newAbsolutePosition - lastAbsolutePosition;
+      OSG::Vec3f newPosition = curPosition + diffPosition;
+
+      OSG::Matrix&amp; mat = m_transC-&gt;editMatrix();
+      mat.setIdentity();
+      mat.setTranslate(newPosition);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>std::cout &lt;&lt; &quot;newPosition: &quot; &lt;&lt; newPosition &lt;&lt; std::endl;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   }
+
+   OSG::Vec3f Figure::computeTranslation(OSG::Real32 t, <span class="keyword">const</span> OSG::Vec3f&amp; dir)
+   {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>The &#39;dir&#39; vector encodes direction and velocity</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Real32 v = dir.length();
+      OSG::Real32 s = v * t;
+
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"t: "</span> &lt;&lt; t &lt;&lt; <span class="built_in">std</span>::endl;
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"dir: "</span> &lt;&lt; dir &lt;&lt; <span class="built_in">std</span>::endl;
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"v: "</span> &lt;&lt; v &lt;&lt; <span class="built_in">std</span>::endl;
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"s: "</span> &lt;&lt; s &lt;&lt; <span class="built_in">std</span>::endl;
+
+      <span class="keyword">return</span>(dir * s);
+   }
+
+   OSG::Vec3f Figure::getCurrentTranslation(<span class="keyword">const</span> OSG::Matrix&amp; matrix)
+   {
+      OSG::Vec3f curTrans, scale;
+      OSG::Quaternion rot;
+      matrix.getTransform(curTrans, rot, scale, rot);
+
+      <span class="keyword">return</span>(curTrans);
+   }
+
+} <span class="comment">// end namespace BoardGame</span></pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
