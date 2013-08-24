@@ -1,7 +1,8 @@
-// Tomato Tutorial Example: Simple Animation
+// Tomato Tutorial App - MenschAergereDichNicht
+// ----------------------------------------------------------------------------
 //
-// This example shows how to create two Actions and combine them to an
-// Animation.
+// This tutorial demonstrates how to use the *Tomato* library for
+// building a basic boardgame application.
 
 #include "OSGGLUT.h"
 #include "OSGConfig.h"
@@ -15,15 +16,11 @@
 #include "OSGMatrixUtility.h"
 #include "OSGVoidPAttachment.h"
 
-// Tomato includes:
-#include "Controller.hpp"
+#include "Lib/Controller.hpp"
+#include "Lib/Figure.hpp"
 
-// BoardGame includes:
-#include "Figure.hpp"
-
-/* ---------------------------------------------------------------------------*/
-/* Globals:                                                                   */
-
+// A global container for storing data and runtime objects necessary for
+// playing the game.
 struct Globals
 {
    OSG::SimpleSceneManagerRefPtr mgr;
@@ -45,9 +42,7 @@ struct Globals
    OSG::NodeUnrecPtr selectedNode;
 } G;
 
-/* ---------------------------------------------------------------------------*/
-/* Init globals:                                                              */
-
+// Initialises the globals stored in the Globals container.
 void initGlobals()
 {
    G.fps   = 25;
@@ -66,9 +61,7 @@ void initGlobals()
    G.selectedNode = 0;
 }
 
-/* ---------------------------------------------------------------------------*/
-/* Helper functions:                                                          */
-
+// Convenience function to set the eye position.
 void setEyePositionHelper(const OSG::Pnt3f& from,
                           const OSG::Pnt3f& at,
                           const OSG::Vec3f& up)
@@ -78,6 +71,8 @@ void setEyePositionHelper(const OSG::Pnt3f& from,
    G.mgr->getNavigator()->setUp  (up);
 }
 
+// Convenience function to calculate the translation base on a time and
+// direction parameter.
 OSG::Vec3f calcTranslation(OSG::Real32 t, OSG::Vec3f dir)
 {
    // The 'dir' vector encodes direction and velocity

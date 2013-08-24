@@ -23,18 +23,18 @@ SET(TARGET        testSimple)
 SET(LABEL         ${TARGET})
 SET(DEBUG_POSTFIX D)
 
-SET(MSVC_IGNORE_LIBRARY_FLAGS "/NODEFAULTLIB:libc
-                               /NODEFAULTLIB:libcmt
-                               /NODEFAULTLIB:freeglut")
+IF(WIN32)
+    SET(MSVC_IGNORE_LIBRARY_FLAGS "/NODEFAULTLIB:libc
+                                   /NODEFAULTLIB:libcmt
+                                   /NODEFAULTLIB:freeglut")
+ENDIF()
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
 # Define source files:
-FILE(GLOB SRCFILES src/*.cpp 
-                   src/*.hpp     
-                   src/*.inl
-		           src/*.fcd
-                   src/*.h)     
+FILE(GLOB SRCFILES src/Lib/*.cpp
+                   src/Lib/*.hpp
+                   src/App/*.cpp)
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
@@ -49,9 +49,9 @@ SET(DEP_LIBRARIES)
 
 #-------------------------------------------------------------------------------
 # Add project internal dependencies:
-#LIST(APPEND DEP_INCLUDE_DIRS ${OSGrimaldo_SOURCE_DIR})
-#LIST(APPEND DEP_LIBRARIES ${DEPENDENCIES})
+LIST(APPEND DEP_INCLUDE_DIRS ${PROJECT_SOURCE_DIR}/src)
 LINK_DIRECTORIES(${BOOST_ROOT}/lib)
+#LIST(APPEND DEP_LIBRARIES ${DEPENDENCIES})
 #-------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------
@@ -113,10 +113,12 @@ TARGET_LINK_LIBRARIES(${TARGET} ${DEP_LIBRARIES})
 SET_TARGET_PROPERTIES(${TARGET} PROPERTIES DEBUG_POSTFIX ${DEBUG_POSTFIX})
 SET_TARGET_PROPERTIES(${TARGET} PROPERTIES PROJECT_LABEL ${LABEL})
 
-SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_DEBUG          ${MSVC_IGNORE_LIBRARY_FLAGS})
-SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_RELEASE        ${MSVC_IGNORE_LIBRARY_FLAGS})
-SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_MINSIZEREL     ${MSVC_IGNORE_LIBRARY_FLAGS})
-SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_RELWITHDEBINFO ${MSVC_IGNORE_LIBRARY_FLAGS})
+IF(WIN32)
+    SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_DEBUG          ${MSVC_IGNORE_LIBRARY_FLAGS})
+    SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_RELEASE        ${MSVC_IGNORE_LIBRARY_FLAGS})
+    SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_MINSIZEREL     ${MSVC_IGNORE_LIBRARY_FLAGS})
+    SET_TARGET_PROPERTIES(${TARGET} PROPERTIES LINK_FLAGS_RELWITHDEBINFO ${MSVC_IGNORE_LIBRARY_FLAGS})
+ENDIF()
 #------------------------------------------------------------------------------
 
 #-------------------------------------------------------------------------------

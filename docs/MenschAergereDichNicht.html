@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>MenschAergereDichNicht.cpp</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>MenschAergereDichNicht.cpp</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              <h2>Tomato Tutorial App - MenschAergereDichNicht</h2>
+<p>This tutorial demonstrates how to use the <em>Tomato</em> library for
+building a basic boardgame application.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="preprocessor">#include "OSGGLUT.h"</span>
+<span class="preprocessor">#include "OSGConfig.h"</span>
+<span class="preprocessor">#include "OSGSimpleGeometry.h"</span>
+<span class="preprocessor">#include "OSGGLUTWindow.h"</span>
+<span class="preprocessor">#include "OSGSimpleSceneManager.h"</span>
+<span class="preprocessor">#include "OSGSceneFileHandler.h"</span>
+<span class="preprocessor">#include "OSGGradientBackground.h"</span>
+<span class="preprocessor">#include "OSGFieldContainerUtils.h"</span>
+<span class="preprocessor">#include "OSGLine.h"</span>
+<span class="preprocessor">#include "OSGMatrixUtility.h"</span>
+<span class="preprocessor">#include "OSGVoidPAttachment.h"</span>
+
+<span class="preprocessor">#include "Lib/Controller.hpp"</span>
+<span class="preprocessor">#include "Lib/Figure.hpp"</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>A global container for storing data and runtime objects necessary for
+playing the game.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">struct</span> Globals
+{
+   OSG::SimpleSceneManagerRefPtr mgr;
+
+   OSG::UInt16 fps;
+   OSG::UInt16 speed;            <span class="comment">// in meter per second</span>
+   OSG::UInt16 figureAnimLength; <span class="comment">// in fps</span>
+
+   OSG::Vec3f moveLeft;
+   OSG::Vec3f moveRight;
+   OSG::Vec3f moveUp;
+   OSG::Vec3f moveDown;
+
+   OSG::Vec3f camDirection;
+
+   OSG::TransformUnrecPtr figure1TransC;
+   OSG::TransformUnrecPtr figure2TransC;
+
+   OSG::NodeUnrecPtr selectedNode;
+} G;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>Initialises the globals stored in the Globals container.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">void</span> initGlobals()
+{
+   G.fps   = <span class="number">25</span>;
+   G.speed = <span class="number">3</span>;
+   G.figureAnimLength = <span class="number">30</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Initialize direction vectors. The vectors encode direction and
+velocity:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   G.moveLeft     = OSG::Vec3f(-<span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>) * G.speed;
+   G.moveRight    = OSG::Vec3f( <span class="number">1</span>, <span class="number">0</span>, <span class="number">0</span>) * G.speed;
+   G.moveUp       = OSG::Vec3f( <span class="number">0</span>, <span class="number">0</span>,-<span class="number">1</span>) * G.speed;
+   G.moveDown     = OSG::Vec3f( <span class="number">0</span>, <span class="number">0</span>, <span class="number">1</span>) * G.speed;
+
+   G.camDirection = OSG::Vec3f( <span class="number">0</span>, <span class="number">1</span>, <span class="number">0</span>) * G.speed;
+
+   G.selectedNode = <span class="number">0</span>;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Convenience function to set the eye position.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre><span class="keyword">void</span> setEyePositionHelper(<span class="keyword">const</span> OSG::Pnt3f&amp; from,
+                          <span class="keyword">const</span> OSG::Pnt3f&amp; at,
+                          <span class="keyword">const</span> OSG::Vec3f&amp; up)
+{
+   G.mgr-&gt;getNavigator()-&gt;setFrom(from);
+   G.mgr-&gt;getNavigator()-&gt;setAt  (at);
+   G.mgr-&gt;getNavigator()-&gt;setUp  (up);
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Convenience function to calculate the translation base on a time and
+direction parameter.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>OSG::Vec3f calcTranslation(OSG::Real32 t, OSG::Vec3f dir)
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>The &#39;dir&#39; vector encodes direction and velocity</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   OSG::Real32 v = dir.length();
+   OSG::Real32 s = v * t;
+   <span class="keyword">return</span>(dir * s);
+}
+
+OSG::Vec3f getCurrentTranslation(OSG::Matrix&amp; matrix)
+{
+   OSG::Vec3f curTrans, scale;
+   OSG::Quaternion rot;
+   matrix.getTransform(curTrans, rot, scale, rot);
+
+   <span class="keyword">return</span>(curTrans);
+}
+
+<span class="keyword">void</span> moveTo(<span class="keyword">int</span> curFrame, <span class="keyword">int</span> numFrames, <span class="keyword">int</span> fps, <span class="keyword">void</span>* userData)
+{
+   OSG::Vec3f* dir = <span class="keyword">static_cast</span>&lt;OSG::Vec3f*&gt;(userData);
+   <span class="keyword">float</span> t = curFrame / (<span class="keyword">float</span>)fps;
+   OSG::Vec3f newAbsolutePosition = calcTranslation(t, *dir);
+
+   OSG::Vec3f lastAbsolutePosition(<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>);
+   <span class="keyword">if</span>(curFrame - <span class="number">1</span> &gt; <span class="number">0</span>)
+   {
+      t = (curFrame - <span class="number">1</span>) / (<span class="keyword">float</span>)fps;
+      lastAbsolutePosition = calcTranslation(t, *dir);
+   }
+
+   OSG::Matrix&amp; mat       = G.figure1TransC-&gt;editMatrix();
+   OSG::Vec3f curPosition = getCurrentTranslation(mat);
+
+   OSG::Vec3f diffPosition = newAbsolutePosition - lastAbsolutePosition;
+   OSG::Vec3f newPosition = curPosition + diffPosition;
+
+   mat.setIdentity();
+   mat.setTranslate(newPosition);
+   G.figure1TransC-&gt;setMatrix(mat);
+}
+
+<span class="keyword">void</span> setEyePosition(<span class="keyword">int</span> curFrame, <span class="keyword">int</span> numFrames, <span class="keyword">int</span> fps, <span class="keyword">void</span>* userData)
+{
+   OSG::Navigator* nav = G.mgr-&gt;getNavigator();
+   OSG::Vec3f *dir = <span class="keyword">static_cast</span>&lt;OSG::Vec3f*&gt;(userData);
+   <span class="keyword">float</span> t = curFrame / (<span class="keyword">float</span>)fps;
+
+   OSG::Vec3f newAbsolutePosition = calcTranslation(t, *dir);
+   OSG::Vec3f lastAbsolutePosition(<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>);
+   <span class="keyword">if</span>(curFrame - <span class="number">1</span> &gt; <span class="number">0</span>)
+   {
+      t = (curFrame - <span class="number">1</span>) / (<span class="keyword">float</span>)fps;
+      lastAbsolutePosition = calcTranslation(t, *dir);
+   }
+
+   OSG::Vec3f diffPosition = newAbsolutePosition - lastAbsolutePosition;
+   OSG::Pnt3f newPosition  = nav-&gt;getFrom().subZero() + diffPosition;
+
+   setEyePositionHelper(newPosition, nav-&gt;getAt(), nav-&gt;getUp());
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* Creates an (inactive) animation that moves the figure into direction 'dir' */</span>
+<span class="comment">/* with the given animation parameters:                                       */</span>
+
+<span class="keyword">void</span> createMoveToAnimation(OSG::Vec3f&amp; dir,
+                           <span class="keyword">const</span> <span class="built_in">std</span>::<span class="built_in">string</span>&amp; name,
+                           <span class="keyword">int</span> numFrames,
+                           <span class="keyword">int</span> fps)
+{
+   Tomato::Action* moveToAction =
+         Tomato::Controller::the()-&gt;createAction(name);
+   moveToAction-&gt;setNumFrames(numFrames);
+   moveToAction-&gt;setUserdata(&amp;dir);
+   moveToAction-&gt;onUpdate = boost::bind&lt;<span class="keyword">void</span>&gt;(&amp;moveTo, _1, _2, _3, _4);
+
+   Tomato::Animation* moveToAnimation =
+         Tomato::Controller::the()-&gt;createAnimation(name);
+   moveToAnimation-&gt;setFrameRate(fps);
+   moveToAnimation-&gt;add(moveToAction);
+   moveToAnimation-&gt;setActive(<span class="keyword">false</span>);
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* Create animations in scene:                                                */</span>
+<span class="keyword">void</span> createAnimations()
+{
+   Tomato::Time time = OSG::getTimeStampMsecs(OSG::getTimeStamp());
+   Tomato::Controller::the()-&gt;init(time);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>  Tomato::Animation* camAnimation =
+        Tomato::Controller::the()-&gt;createAnimation(&quot;MyCameraAnimation&quot;);
+  camAnimation-&gt;setFrameRate(25);
+  camAnimation-&gt;add(moveCameraAction);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+   createMoveToAnimation(G.moveDown , <span class="string">"moveDown"</span> , G.figureAnimLength, G.fps);
+   createMoveToAnimation(G.moveUp   , <span class="string">"moveUp"</span>   , G.figureAnimLength, G.fps);
+   createMoveToAnimation(G.moveLeft , <span class="string">"moveLeft"</span> , G.figureAnimLength, G.fps);
+   createMoveToAnimation(G.moveRight, <span class="string">"moveRight"</span>, G.figureAnimLength, G.fps);
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* Create scene geometry:                                                     */</span>
+
+OSG::NodeTransitPtr createScene(OSG::Window *win)
+{
+   OSG::NodeRecPtr rootN = OSG::makeNodeFor(OSG::Group::create());</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Create ground:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   OSG::NodeUnrecPtr groundN = OSG::makePlane(<span class="number">25</span>,<span class="number">25</span>,<span class="number">1</span>,<span class="number">1</span>);
+   OSG::Matrix m;
+   OSG::Quaternion q;
+   q.setValueAsAxisDeg(OSG::Vec3f(<span class="number">1</span>,<span class="number">0</span>,<span class="number">0</span>), -<span class="number">90</span>);
+   m.setRotate(q);
+
+   OSG::TransformUnrecPtr groundTransC = OSG::Transform::create();
+   groundTransC-&gt;setMatrix(m);
+
+   OSG::NodeUnrecPtr groundTransN = OSG::makeNodeFor(groundTransC);
+   groundTransN-&gt;addChild(groundN);
+   rootN-&gt;addChild(groundTransN);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Set ground material:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   OSG::SimpleMaterialUnrecPtr mat = OSG::SimpleMaterial::create();
+   mat-&gt;setDiffuse(OSG::Color3f(<span class="number">0.8</span>,<span class="number">0.8</span>,<span class="number">0.8</span>));
+   <span class="keyword">dynamic_cast</span>&lt;OSG::Geometry*&gt;(groundN-&gt;getCore())-&gt;setMaterial(mat);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>  // Create figure:
+  OSG::NodeUnrecPtr figure1N =
+        OSG::SceneFileHandler::the()-&gt;read(&quot;../Models/Figure.obj&quot;);</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>  G.figure1TransC = OSG::Transform::create();
+  OSG::NodeUnrecPtr trans1N = OSG::makeNodeFor(G.figure1TransC);
+  trans1N-&gt;addChild(figure1N);
+  rootN-&gt;addChild(trans1N);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+   OSG::NodeUnrecPtr figureModelA =
+         OSG::SceneFileHandler::the()-&gt;read(<span class="string">"../assets/Figure.obj"</span>);
+
+   BoardGame::Figure* figureA = <span class="keyword">new</span> BoardGame::Figure();
+   figureA-&gt;setModel(figureModelA);
+   rootN-&gt;addChild(figureA-&gt;getRoot());
+
+   OSG::NodeUnrecPtr figureModelB =
+         OSG::SceneFileHandler::the()-&gt;read(<span class="string">"../assets/Figure.obj"</span>);
+
+   BoardGame::Figure* figureB = <span class="keyword">new</span> BoardGame::Figure();
+   figureB-&gt;setModel(figureModelB);
+   rootN-&gt;addChild(figureB-&gt;getRoot());
+
+   G.selectedNode = figureModelA;
+
+   <span class="keyword">return</span>(OSG::NodeTransitPtr(rootN));
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* Command line argument handling:                                            */</span>
+
+<span class="keyword">void</span> handleCommandLineArguments(<span class="keyword">int</span> argc, <span class="keyword">char</span> *argv[])
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>   if(argc == 4)
+   {
+       gmlGlobals.userlib      = argv[1];
+       gmlGlobals.script       = argv[2];
+       gmlGlobals.materialPath = argv[3];
+   }
+   else
+   {
+       std::string usage = &quot;Wrong arguments!\nUsage:\n   test-osgrimaldo-v1 \&quot;/path/to/userlib.xgml\&quot; \&quot;my.script\&quot; \&quot;/path/to/tubs.mtl\&quot;\n&quot;;
+       std::cout &lt;&lt; usage &lt;&lt; std::endl;
+       exit(-1);
+   }</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* GLUT functions:                                                            */</span>
+
+<span class="keyword">void</span> display(<span class="keyword">void</span>)
+{
+   Tomato::Controller::the()-&gt;update(OSG::getTimeStampMsecs(OSG::getTimeStamp()));
+
+   G.mgr-&gt;redraw();
+
+   OSG::Thread::getCurrentChangeList()-&gt;clear();
+}
+
+<span class="keyword">void</span> reshape(<span class="keyword">int</span> w, <span class="keyword">int</span> h)
+{
+   G.mgr-&gt;resize(w, h);
+   glutPostRedisplay();
+}
+
+<span class="keyword">void</span> mouse(<span class="keyword">int</span> button, <span class="keyword">int</span> state, <span class="keyword">int</span> x, <span class="keyword">int</span> y)
+{
+   <span class="keyword">if</span> (state)
+   {
+      G.mgr-&gt;mouseButtonRelease(button, x, y);
+   }
+   <span class="keyword">else</span>
+   {
+      OSG::Line ray = G.mgr-&gt;calcViewRay(x, y);
+      OSG::IntersectActionRefPtr ia = OSG::IntersectAction::create();
+      ia-&gt;setLine(ray);
+      ia-&gt;apply(G.mgr-&gt;getRoot());
+
+      <span class="keyword">if</span>(ia-&gt;didHit())
+      {
+         G.selectedNode = ia-&gt;getHitObject();
+
+         <span class="keyword">if</span>(OSG::getVoidP(G.selectedNode))
+         {
+            <span class="keyword">if</span>(<span class="keyword">static_cast</span>&lt;BoardGame::Figure*&gt;(OSG::getVoidP(G.selectedNode)))
+            {
+               <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Selected figure"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+               ia = <span class="number">0</span>;
+               <span class="keyword">return</span>;
+            }
+         }
+      }
+      ia = <span class="number">0</span>;
+
+      G.mgr-&gt;mouseButtonPress(button, x, y);
+   }
+
+   glutPostRedisplay();
+}
+
+<span class="keyword">void</span> motion(<span class="keyword">int</span> x, <span class="keyword">int</span> y)
+{
+   G.mgr-&gt;mouseMove(x, y);
+
+   glutPostRedisplay();
+}
+
+<span class="keyword">void</span> moveLeft()
+{
+   <span class="keyword">if</span>(G.selectedNode)
+   {
+      BoardGame::Figure* figure =
+            <span class="keyword">static_cast</span>&lt;BoardGame::Figure*&gt;(OSG::getVoidP(G.selectedNode));
+
+      <span class="keyword">if</span>(figure)
+      {
+         figure-&gt;moveLeft();
+      }
+      <span class="keyword">else</span>
+      {
+         <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"No figure selected!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+      }
+   }
+   <span class="keyword">else</span>
+   {
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Select a figure first!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+   }
+}
+
+<span class="keyword">void</span> moveRight()
+{
+   <span class="keyword">if</span>(G.selectedNode)
+   {
+      BoardGame::Figure* figure =
+            <span class="keyword">static_cast</span>&lt;BoardGame::Figure*&gt;(OSG::getVoidP(G.selectedNode));
+
+      <span class="keyword">if</span>(figure)
+      {
+         figure-&gt;moveRight();
+      }
+      <span class="keyword">else</span>
+      {
+         <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"No figure selected!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+      }
+   }
+   <span class="keyword">else</span>
+   {
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Select a figure first!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+   }
+}
+
+<span class="keyword">void</span> moveUp()
+{
+   <span class="keyword">if</span>(G.selectedNode)
+   {
+      BoardGame::Figure* figure =
+            <span class="keyword">static_cast</span>&lt;BoardGame::Figure*&gt;(OSG::getVoidP(G.selectedNode));
+
+      <span class="keyword">if</span>(figure)
+      {
+         figure-&gt;moveUp();
+      }
+      <span class="keyword">else</span>
+      {
+         <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"No figure selected!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+      }
+   }
+   <span class="keyword">else</span>
+   {
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Select a figure first!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+   }
+}
+
+<span class="keyword">void</span> moveDown()
+{
+   <span class="keyword">if</span>(G.selectedNode)
+   {
+      BoardGame::Figure* figure =
+            <span class="keyword">static_cast</span>&lt;BoardGame::Figure*&gt;(OSG::getVoidP(G.selectedNode));
+
+      <span class="keyword">if</span>(figure)
+      {
+         figure-&gt;moveDown();
+      }
+      <span class="keyword">else</span>
+      {
+         <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"No figure selected!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+      }
+   }
+   <span class="keyword">else</span>
+   {
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Select a figure first!"</span> &lt;&lt; <span class="built_in">std</span>::endl;
+   }
+}
+
+<span class="keyword">void</span> keyboard(<span class="keyword">unsigned</span> <span class="keyword">char</span> k, <span class="keyword">int</span> , <span class="keyword">int</span> )
+{
+   <span class="keyword">switch</span>(k)
+   {
+   <span class="keyword">case</span> <span class="number">27</span>:
+   {
+      G.figure1TransC = <span class="number">0</span>;
+      G.figure2TransC = <span class="number">0</span>;
+
+      G.mgr = <span class="number">0</span>;
+
+      Tomato::Controller::destroy();
+
+      OSG::osgExit();
+      exit(<span class="number">0</span>);
+   }
+      <span class="keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>a,s,d,w movement control ----------------------------------------------</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   <span class="keyword">case</span> <span class="string">'a'</span>:
+   {
+      moveLeft();
+   }
+      <span class="keyword">break</span>;
+
+   <span class="keyword">case</span> <span class="string">'d'</span>:
+   {
+      moveRight();
+   }
+      <span class="keyword">break</span>;
+
+   <span class="keyword">case</span> <span class="string">'w'</span>:
+   {
+      moveUp();
+   }
+      <span class="keyword">break</span>;
+
+   <span class="keyword">case</span> <span class="string">'s'</span>:
+   {
+      moveDown();
+   }
+      <span class="keyword">break</span>;</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+   <span class="keyword">case</span> <span class="string">'n'</span>:
+   {
+      G.figure1TransC-&gt;editMatrix().setIdentity();
+      Tomato::Animation* figureAnim =
+            Tomato::Controller::the()-&gt;getAnimation(<span class="string">"MyFigureAnimation"</span>);
+      assert(figureAnim);
+      figureAnim-&gt;setActive(<span class="keyword">true</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Set the eye position:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Pnt3f from(<span class="number">18</span>,<span class="number">18</span>,<span class="number">18</span>);
+      OSG::Pnt3f at  (<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>);
+      OSG::Vec3f up  (<span class="number">0</span>,<span class="number">1</span>,<span class="number">0</span>);
+      setEyePositionHelper(from, at, up);
+
+      Tomato::Animation* camAnim =
+            Tomato::Controller::the()-&gt;getAnimation(<span class="string">"MyCameraAnimation"</span>);
+      assert(camAnim);
+      camAnim-&gt;setActive(<span class="keyword">true</span>);
+   }
+      <span class="keyword">break</span>;
+
+   <span class="keyword">case</span> <span class="string">'f'</span>:
+      G.mgr-&gt;setNavigationMode(OSG::Navigator::FLY);
+      <span class="keyword">break</span>;
+   <span class="keyword">case</span> <span class="string">'t'</span>:
+      G.mgr-&gt;setNavigationMode(OSG::Navigator::TRACKBALL);
+      <span class="keyword">break</span>;
+   <span class="keyword">case</span> <span class="string">'q'</span>:
+      G.mgr-&gt;setStatistics(<span class="keyword">true</span>);
+      <span class="keyword">break</span>;
+   <span class="keyword">case</span> <span class="string">'Q'</span>:
+      G.mgr-&gt;setStatistics(<span class="keyword">false</span>);
+      <span class="keyword">break</span>;
+
+   <span class="keyword">case</span> <span class="string">'r'</span>:
+   {
+      <span class="keyword">bool</span> useTrav = !G.mgr-&gt;getUseTraversalAction();
+      G.mgr-&gt;setUseTraversalAction(useTrav);
+      printf(<span class="string">"Using %s action.\n"</span>, useTrav ? <span class="string">"render traversal"</span> : <span class="string">"render"</span>);
+   }
+      <span class="keyword">break</span>;
+
+   <span class="keyword">case</span> <span class="string">'p'</span>:
+   {
+      <span class="built_in">std</span>::<span class="built_in">cout</span> &lt;&lt; <span class="string">"Scanning memory consumption."</span> &lt;&lt; <span class="built_in">std</span>::endl;
+      OSG::MemoryConsumption mc;
+      mc.scan();
+      mc.print(<span class="built_in">std</span>::<span class="built_in">cout</span>);
+   }
+      <span class="keyword">break</span>;
+   }
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* Setup GLUT:                                                                */</span>
+
+<span class="keyword">int</span> setupGLUT(<span class="keyword">int</span> *argc, <span class="keyword">char</span> *argv[])
+{
+   glutInit(argc, argv);
+   glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
+
+   <span class="keyword">int</span> winid = glutCreateWindow(<span class="string">"OpenSG"</span>);
+
+   glutReshapeFunc(reshape);
+   glutDisplayFunc(display);
+   glutIdleFunc(display);
+   glutMouseFunc(mouse);
+   glutMotionFunc(motion);
+   glutKeyboardFunc(keyboard);
+
+   <span class="keyword">return</span> winid;
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span>
+<span class="comment">/* Main method:                                                               */</span>
+<span class="keyword">int</span> main(<span class="keyword">int</span> argc, <span class="keyword">char</span> **argv)
+{
+   handleCommandLineArguments(argc, argv);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>OSG init</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   OSG::osgInit(argc,argv);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>GLUT init</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   <span class="keyword">int</span> winid = setupGLUT(&amp;argc, argv);
+
+   initGlobals();
+
+   {
+      OSG::GLUTWindowUnrecPtr gwin= OSG::GLUTWindow::create();
+      gwin-&gt;setGlutId(winid);
+      gwin-&gt;init();
+
+      OSG::NodeUnrecPtr scene = createScene(gwin);
+
+      createAnimations();
+
+      OSG::commitChanges();</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Create the SimpleSceneManager helper</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      G.mgr = OSG::SimpleSceneManager::create();
+      G.mgr-&gt;setUseTraversalAction(<span class="keyword">true</span>);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>Tell the manager what to manage:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      G.mgr-&gt;setWindow(gwin );
+      G.mgr-&gt;setRoot  (scene);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>Create a background:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::GradientBackgroundUnrecPtr bg = OSG::GradientBackground::create();
+      bg-&gt;addLine(OSG::Color3f(<span class="number">0.9f</span>, <span class="number">0.9f</span>, <span class="number">1.0f</span>), <span class="number">0</span>);
+      bg-&gt;addLine(OSG::Color3f(<span class="number">0.0f</span>, <span class="number">0.3f</span>, <span class="number">0.9f</span>), <span class="number">1</span>);
+      G.mgr-&gt;setBackground(bg);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>Set the eye position:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>      OSG::Pnt3f from(<span class="number">18</span>,<span class="number">18</span>,<span class="number">18</span>);
+      OSG::Pnt3f at  (<span class="number">0</span>,<span class="number">0</span>,<span class="number">0</span>);
+      OSG::Vec3f up  (<span class="number">0</span>,<span class="number">1</span>,<span class="number">0</span>);
+      setEyePositionHelper(from, at, up);
+   }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>GLUT main loop</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   glutMainLoop();
+
+   <span class="keyword">return</span> <span class="number">0</span>;
+}
+
+<span class="comment">/* ---------------------------------------------------------------------------*/</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>void myAnimationCallback(int curFrame, int numFrames, int fps)
+{
+  std::cout &lt;&lt; &quot;Updated myAnimationCallback (curFrame = &quot;
+            &lt;&lt; curFrame &lt;&lt; &quot; / numFrames = &quot; &lt;&lt; numFrames
+            &lt;&lt; &quot; / fps = &quot; &lt;&lt; fps &lt;&lt; std::endl;</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>  OSG::Matrix m;
+  OSG::Vec3f from(0,1,0);
+  OSG::Vec3f to  (0,1,0);
+  OSG::Quaternion rot_from;
+  rot_from.setValueAsAxisDeg(from, 0);
+  OSG::Quaternion rot_to;
+  rot_to.setValueAsAxisDeg(to, 90);</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>  std::cout &lt;&lt; &quot;Percentage of Action = &quot;
+            &lt;&lt; 100.f/numFrames * curFrame &lt;&lt; std::endl;</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>  OSG::Quaternion result =
+        OSG::Quaternion::slerp(rot_from, rot_to,
+                               (int)(numFrames/100.f * curFrame));
+  G.rotMatrix.setIdentity();
+  G.rotMatrix.setRotate(result);</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>  G.transC-&gt;setMatrix(G.rotMatrix);
+}</p>
+
+            </div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

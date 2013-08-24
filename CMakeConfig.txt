@@ -2,9 +2,17 @@
 # Library configuration file for the Tomato project
 #------------------------------------------------------------------------------
 
-# Point the following variables your local library installations of OpenSG and Boost:
-SET(OPENSG_ROOT       "D:/Coding/Libs/OpenSG2-Februar2012/OpenSG.install")
-SET(BOOST_ROOT        "D:/Coding/Libs/OpenSG2-Februar2012/OpenSG.Support.install")
-
-SET(GLUT_ROOT         "D:/Coding/Libs/OpenSG2-Februar2012/OpenSG.Support.install")
+IF(WIN32)
+	SET(OPENSG_ROOT       "D:/Coding/SDKs/OpenSG2/Versions/2012-09-13_CUDA_Qt4.8_win32/OpenSG.install")
+	SET(OSG_SUPPORT_ROOT  "D:/Coding/SDKs/OpenSG2/Versions/2012-09-13_CUDA_Qt4.8_win32/OpenSG.Support.install")
+	SET(BOOST_ROOT        "${OSG_SUPPORT_ROOT}" CACHE PATH "Boost installation directory")
+	SET(GLUT_ROOT_PATH    "${OSG_SUPPORT_ROOT}" CACHE PATH "GLUT installation directory")
+	SET(GLEW_ROOT         "${OSG_SUPPORT_ROOT}" CACHE PATH "GLEW installation directory")
+ELSE()
+	SET(OPENSG_ROOT       "/home/martin/Coding/SDKs/OpenSG/Versions/2012-11-02_x64_PyBindings/OpenSG.install")
+	SET(OSG_SUPPORT_ROOT  "/home/martin/Coding/SDKs/OpenSG/Versions/2012-11-02_x64_PyBindings/OpenSG.Support.install")
+	SET(BOOST_ROOT        "${OSG_SUPPORT_ROOT}" CACHE PATH "Boost installation directory")
+	SET(GLUT_ROOT_PATH    "${OSG_SUPPORT_ROOT}" CACHE PATH "GLUT installation directory")
+	SET(GLEW_ROOT         "${OSG_SUPPORT_ROOT}" CACHE PATH "GLEW installation directory")
+ENDIF()
 
